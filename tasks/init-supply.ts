@@ -1,23 +1,22 @@
 import { task } from "hardhat/config";
-import { ethers } from "ethers";
+import { address } from "hardhat/internal/core/config/config-validation";
 
-task("set-max-amount", "Updates minimum amount for depositing an ERC20 token")
-  .addParam("address", "Address of the ERC20 token to be whitelisted")
+task("init-supply", "Deposit the initial supply on a new SC from an old one")
+  .addParam("address", "The addres of the token that will be deposited")
   .addParam("amount", "New amount we want to set (full value, with 18 decimals)")
   .addOptionalParam("price", "Gas price in gwei for this transaction", undefined)
   .setAction(async (taskArgs, hre) => {
-    const tokenAddress = taskArgs.address;
-    const amount = taskArgs.amount;
-
     const [adminWallet] = await hre.ethers.getSigners();
     const fs = require("fs");
+    const address = taskArgs.address;
+    const amount = taskArgs.amount;
     const config = JSON.parse(fs.readFileSync("setup.config.json", "utf8"));
     const safeAddress = config["erc20Safe"];
     const safeContractFactory = await hre.ethers.getContractFactory("ERC20Safe");
     const safe = safeContractFactory.attach(safeAddress).connect(adminWallet);
     if (taskArgs.price) {
-      await safe.setTokenMaxLimit(tokenAddress, amount, { gasPrice: taskArgs.price * 1000000000 });
+      await safe.initSupply(address, amount, { gasPrice: taskArgs.price * 1000000000 });
     } else {
-      await safe.setTokenMaxLimit(tokenAddress, amount);
+      await safe.initSupply(address, amount);
     }
   });

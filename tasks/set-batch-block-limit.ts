@@ -2,6 +2,7 @@ import { task } from "hardhat/config";
 
 task("set-batch-block-limit", "Sets a new batch block limit")
   .addParam("blocks", "new batch block limit")
+  .addOptionalParam("price", "Gas price in gwei for this transaction", undefined)
   .setAction(async (taskArgs, hre) => {
     const fs = require("fs");
     const filename = "setup.config.json";
@@ -11,5 +12,11 @@ task("set-batch-block-limit", "Sets a new batch block limit")
     const safeContractFactory = await hre.ethers.getContractFactory("ERC20Safe");
     const safe = safeContractFactory.attach(safeAddress).connect(adminWallet);
 
-    await safe.setBatchBlockLimit(taskArgs.blocks);
+    if (taskArgs.price) {
+      await safe.setBatchBlockLimit(taskArgs.blocks, { gasPrice: taskArgs.price * 1000000000 });
+    } else {
+      await safe.setBatchBlockLimit(taskArgs.blocks);
+    }
+    config.batchBlockLimit = taskArgs.blocks;
+    fs.writeFileSync(filename, JSON.stringify(config));
   });
